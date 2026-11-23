@@ -19,3 +19,9 @@ venv/
 # Outils locaux
 .claude/
 .vscode/
+
+# Partie carte (Raspberry Pi) : secrets, base locale et etat d'execution
+carte/config_modics.ini
+carte/config.ini
+carte/press.db
+carte/modics_*.json

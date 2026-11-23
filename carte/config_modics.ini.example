@@ -1,0 +1,35 @@
+; Copier ce fichier en "config_modics.ini" dans /home/pi/Downloads/
+; (ou définir la variable d'environnement MODICS_CONFIG pour un autre chemin)
+; et remplacer les CHANGE_ME par les vrais identifiants.
+; Ce fichier ne doit JAMAIS être versionné dans un dépôt Git public.
+
+[machine]
+name = PRS 63
+
+[local_db]
+path = /home/pi/Downloads/press.db
+
+[internal_db]
+host = localhost
+database = internal_machine_db
+user = internal_user
+password = CHANGE_ME
+
+[external_db]
+server = 192.168.80.216
+user = sa
+password = CHANGE_ME
+database = MODICS
+
+[email]
+sender = modics2023@gmail.com
+app_password = CHANGE_ME
+receivers_default = mohamed.aliayari@bulgin.com,marwen.rahal@bulgin.com,marwenrahal80@gmail.com
+
+[capteur]
+; front qui compte un cycle : falling = fin d'impulsion ON (conforme au schéma), ou rising
+edge = falling
+; fréquence de lecture de l'entrée 2 (Hz)
+poll_hz = 50
+; anti-rebond : nombre de lectures identiques consécutives pour valider un changement (3 x 20 ms = 60 ms)
+stable_samples = 3

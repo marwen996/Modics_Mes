@@ -1,0 +1,800 @@
+#:import Factory kivy.factory.Factory
+#:import RiseInTransition kivy.uix.screenmanager.RiseInTransition
+#:kivy 2.3.0
+
+# =============================================================================
+# MODICS — thème industriel (Bulgin)
+# Palette inspirée de l'identité Bulgin : marine profond + accent orange.
+# NOTE : je n'ai pas trouvé de charte graphique officielle Bulgin avec codes
+# hexadécimaux exacts (le site ne les publie pas) — cette palette est une
+# approximation raisonnable à partir du logo/du site. Si vous avez un guide
+# de marque interne avec les vraies couleurs, remplacez juste les valeurs
+# ci-dessous : tout le reste de l'écran en dépend automatiquement.
+# =============================================================================
+#:set COLOR_NAVY        (0.05, 0.14, 0.24, 1)
+#:set COLOR_NAVY_LIGHT  (0.10, 0.22, 0.36, 1)
+#:set COLOR_ORANGE      (0.95, 0.40, 0.13, 1)
+#:set COLOR_ORANGE_DARK (0.80, 0.32, 0.09, 1)
+#:set COLOR_GREEN       (0.16, 0.60, 0.35, 1)
+#:set COLOR_RED         (0.82, 0.24, 0.24, 1)
+#:set COLOR_AMBER       (0.93, 0.63, 0.18, 1)
+#:set COLOR_WHITE       (1, 1, 1, 1)
+#:set COLOR_LIGHT_BG    (0.94, 0.95, 0.96, 1)
+#:set COLOR_TEXT_DARK   (0.10, 0.10, 0.12, 1)
+#:set COLOR_TEXT_MUTED  (0.45, 0.48, 0.52, 1)
+
+#:set COLOR_ALERT       (0.80, 0.05, 0.05, 1)
+
+# --- Composants réutilisables (évite de répéter 10x le même style) ---------
+
+<ModernButton@Button>:
+    background_normal: ''
+    background_down: ''
+    background_color: COLOR_NAVY_LIGHT
+    color: COLOR_WHITE
+    bold: True
+    font_size: 24
+    halign: 'center'
+    valign: 'middle'
+    text_size: self.width - 16, self.height - 10
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [14,]
+
+<GhostLabelButton@Button>:
+    # Un "Button" utilisé comme simple étiquette (comme dans l'original :
+    # certains Button ne servent qu'à afficher du texte, sans action).
+    background_normal: ''
+    background_down: ''
+    background_color: COLOR_NAVY
+    color: COLOR_WHITE
+    bold: True
+    font_size: 18
+    halign: 'center'
+    valign: 'middle'
+    text_size: self.width - 12, self.height - 8
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
+
+<StatValueLabel@Label>:
+    bold: True
+    font_size: 34
+    color: COLOR_TEXT_DARK
+    halign: 'center'
+    valign: 'middle'
+    text_size: self.width, self.height
+
+<SectionLabel@Label>:
+    bold: True
+    font_size: 22
+    color: COLOR_WHITE
+    halign: 'left'
+    valign: 'middle'
+    text_size: self.width, self.height
+
+<CardPanel@BoxLayout>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 0.94
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [18,]
+    padding: 18
+    spacing: 10
+
+<ModernInput@TextInput>:
+    halign: 'center'
+    font_size: 40
+    size_hint: 1, 0.8
+    width: 300
+    height: 55
+    color: COLOR_TEXT_DARK
+    background_color: COLOR_WHITE
+    cursor_blink: True
+    multiline: False
+
+<RoundedButton@Button>:
+    # Conservé pour compatibilité (utilisé par des écrans pas encore
+    # modernisés dans ce premier lot) - même comportement qu'avant.
+    background_color:(0,0,0,0)
+    background_normal:''
+    canvas.before:
+        RoundedRectangle:
+            size:self.size
+            pos:self.pos
+            radius:[20]
+
+<Manager>:
+
+    ScreenManager:
+        id: managerScreen
+        transition:RiseInTransition()
+
+# =============================================================================
+# ÉCRAN PRODUCTION — tableau de bord Industrie 4.0 (800x480)
+# Tous les ids historiques sont conservés (Python les met à jour).
+# Nouveaux ids : chrono, oee_gauge, oee_pct, kpi_dispo, kpi_perf, kpi_qual,
+#                cycle_chart, cycle_target
+# =============================================================================
+        Screen:
+            name: 'Production'
+            canvas.before:
+                Color:
+                    rgba: COLOR_ALERT if root.ct_alerte else COLOR_LIGHT_BG
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            canvas.after:
+                Color:
+                    rgba: COLOR_ALERT if root.ct_alerte else (0, 0, 0, 0)
+                Line:
+                    rectangle: self.x + 4, self.y + 4, self.width - 8, self.height - 8
+                    width: 6
+            BoxLayout:
+                orientation: 'vertical'
+                padding: [12, 10, 12, 10]
+                spacing: 8
+
+                # --- Bandeau d'état + chrono --------------------------------------
+                BoxLayout:
+                    size_hint_y: None
+                    height: 52
+                    orientation: 'horizontal'
+                    padding: [14, 4, 14, 4]
+                    spacing: 8
+                    canvas.before:
+                        Color:
+                            rgba: COLOR_ALERT if root.ct_alerte else COLOR_NAVY
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [10,]
+                    Label:
+                        id: cas
+                        text: ''
+                        bold: True
+                        font_size: 17
+                        color: COLOR_GREEN
+                        halign: 'left'
+                        valign: 'middle'
+                        text_size: self.width, None
+                        max_lines: 1
+                        size_hint_x: None
+                        width: 150
+                    Widget:
+                        size_hint_x: None
+                        width: 22
+                        canvas:
+                            Color:
+                                rgba: cas.color
+                            Ellipse:
+                                pos: self.center_x - 7, self.center_y - 7
+                                size: 14, 14
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_x: 1
+                        Label:
+                            id: start
+                            text: ''
+                            bold: True
+                            font_size: 12
+                            color: COLOR_WHITE
+                            halign: 'left'
+                            valign: 'middle'
+                            text_size: self.width, None
+                            shorten: True
+                            shorten_from: 'right'
+                            max_lines: 1
+                        Label:
+                            id: horloge
+                            text: ''
+                            bold: True
+                            font_size: 12
+                            color: COLOR_AMBER
+                            halign: 'left'
+                            valign: 'middle'
+                            text_size: self.width, None
+                            shorten: True
+                            shorten_from: 'right'
+                            max_lines: 1
+                    Label:
+                        text: 'Cycle en cours'
+                        font_size: 12
+                        color: 0.75, 0.8, 0.88, 1
+                        halign: 'right'
+                        valign: 'middle'
+                        text_size: self.width, None
+                        max_lines: 1
+                        size_hint_x: None
+                        width: 96
+                    Label:
+                        id: chrono
+                        text: '--.- s'
+                        bold: True
+                        font_size: 26
+                        color: COLOR_WHITE
+                        font_name: 'RobotoMono-Regular'
+                        size_hint_x: None
+                        width: 118
+                        halign: 'right'
+                        valign: 'middle'
+                        text_size: self.width, None
+                        shorten: True
+                        max_lines: 1
+                    Label:
+                        id: cycle1
+                        text: ''
+                        font_size: 12
+                        color: COLOR_ORANGE
+                        size_hint_x: None
+                        width: 84
+                        halign: 'left'
+                        valign: 'middle'
+                        text_size: self.width, self.height
+                    ModernButton:
+                        text: 'OFF'
+                        background_color: COLOR_RED
+                        font_size: 13
+                        size_hint_x: None
+                        width: 44
+                        on_release: root.popup_power()
+
+                # --- Bande infos OF (5 paires libellé/valeur) ---------------------
+                BoxLayout:
+                    id: info_row
+                    size_hint_y: None
+                    height: 44
+                    orientation: 'horizontal'
+                    spacing: 6
+                    BoxLayout:
+                        orientation: 'vertical'
+                        padding: [8, 2, 8, 2]
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [8,]
+                        Label:
+                            id: so_p_l
+                            text: 'Shop Order'
+                            font_size: 11
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        Label:
+                            id: ShopOrder1
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            shorten: True
+                    BoxLayout:
+                        orientation: 'vertical'
+                        padding: [8, 2, 8, 2]
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [8,]
+                        Label:
+                            id: part_p_l
+                            text: 'Part Number'
+                            font_size: 11
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        Label:
+                            id: part1
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            shorten: True
+                    BoxLayout:
+                        orientation: 'vertical'
+                        padding: [8, 2, 8, 2]
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [8,]
+                        Label:
+                            id: tool_p_l
+                            text: 'Tool Nbr(Cavity)'
+                            font_size: 11
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        Label:
+                            id: touls1
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            shorten: True
+                    BoxLayout:
+                        orientation: 'vertical'
+                        padding: [8, 2, 8, 2]
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [8,]
+                        Label:
+                            id: matiere_p_l
+                            text: 'Ref Matière'
+                            font_size: 11
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        Label:
+                            id: matiere1
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            shorten: True
+                    BoxLayout:
+                        orientation: 'vertical'
+                        padding: [8, 2, 8, 2]
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [8,]
+                        Label:
+                            id: vitesse_p_l
+                            text: 'Cycle'
+                            font_size: 11
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        Label:
+                            id: cycle_target
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+
+                # --- Corps : jauge OEE | KPI + courbe ------------------------------
+                BoxLayout:
+                    orientation: 'horizontal'
+                    spacing: 8
+
+                    # Carte jauge
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_x: None
+                        width: 236
+                        padding: [10, 6, 10, 8]
+                        spacing: 4
+                        canvas.before:
+                            Color:
+                                rgba: COLOR_WHITE
+                            RoundedRectangle:
+                                pos: self.pos
+                                size: self.size
+                                radius: [12,]
+                        Label:
+                            text: 'TRS global OF'
+                            font_size: 12
+                            color: COLOR_TEXT_MUTED
+                            size_hint_y: None
+                            height: 16
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                        OeeGauge:
+                            id: oee_gauge
+                            value: 0
+                        Label:
+                            id: oee_pct
+                            text: '0 %'
+                            bold: True
+                            font_size: 30
+                            color: COLOR_NAVY
+                            size_hint_y: None
+                            height: 34
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 44
+                            spacing: 4
+                            BoxLayout:
+                                orientation: 'vertical'
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_LIGHT_BG
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [6,]
+                                Label:
+                                    text: 'Shift A'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                Label:
+                                    id: kpi_shift_a
+                                    text: '0 %'
+                                    bold: True
+                                    font_size: 15
+                                    color: COLOR_TEXT_DARK
+                            BoxLayout:
+                                orientation: 'vertical'
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_LIGHT_BG
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [6,]
+                                Label:
+                                    text: 'Shift B'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                Label:
+                                    id: kpi_shift_b
+                                    text: '0 %'
+                                    bold: True
+                                    font_size: 15
+                                    color: COLOR_TEXT_DARK
+                            BoxLayout:
+                                orientation: 'vertical'
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_LIGHT_BG
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [6,]
+                                Label:
+                                    text: 'Shift C'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                Label:
+                                    id: kpi_shift_c
+                                    text: '0 %'
+                                    bold: True
+                                    font_size: 15
+                                    color: COLOR_TEXT_DARK
+
+                    # Colonne droite : compteurs + courbe
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 8
+
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 66
+                            spacing: 6
+                            BoxLayout:
+                                orientation: 'vertical'
+                                padding: [10, 4, 10, 4]
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_WHITE
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [8,]
+                                Label:
+                                    id: qt_p_l
+                                    text: 'Produite'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                                Label:
+                                    id: qtProduite
+                                    text: '0'
+                                    bold: True
+                                    font_size: 26
+                                    color: COLOR_NAVY
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                            BoxLayout:
+                                orientation: 'vertical'
+                                padding: [10, 4, 10, 4]
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_WHITE
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [8,]
+                                    Color:
+                                        rgba: COLOR_GREEN
+                                    Rectangle:
+                                        pos: self.x, self.y + 8
+                                        size: 4, self.height - 16
+                                Label:
+                                    id: good_p_l
+                                    text: 'Bonnes'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                                Label:
+                                    id: qtBon
+                                    text: '0'
+                                    bold: True
+                                    font_size: 26
+                                    color: COLOR_GREEN
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                            BoxLayout:
+                                orientation: 'vertical'
+                                padding: [10, 4, 10, 4]
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_WHITE
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [8,]
+                                    Color:
+                                        rgba: COLOR_RED
+                                    Rectangle:
+                                        pos: self.x, self.y + 8
+                                        size: 4, self.height - 16
+                                Label:
+                                    id: rejets_l
+                                    text: 'Rejets'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                                Label:
+                                    id: qtRejet
+                                    text: '0'
+                                    bold: True
+                                    font_size: 26
+                                    color: COLOR_RED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                            BoxLayout:
+                                orientation: 'vertical'
+                                padding: [10, 4, 10, 4]
+                                canvas.before:
+                                    Color:
+                                        rgba: COLOR_WHITE
+                                    RoundedRectangle:
+                                        pos: self.pos
+                                        size: self.size
+                                        radius: [8,]
+                                Label:
+                                    text: 'Purge (g)'
+                                    font_size: 11
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                                Label:
+                                    id: qtPurge
+                                    text: '0'
+                                    bold: True
+                                    font_size: 26
+                                    color: COLOR_NAVY_LIGHT
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+
+                        # Courbe des temps de cycle
+                        BoxLayout:
+                            orientation: 'vertical'
+                            padding: [10, 6, 10, 6]
+                            canvas.before:
+                                Color:
+                                    rgba: COLOR_WHITE
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [12,]
+                            BoxLayout:
+                                orientation: 'horizontal'
+                                size_hint_y: None
+                                height: 16
+                                Label:
+                                    text: 'Temps de cycle · 30 derniers cycles'
+                                    font_size: 12
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'left'
+                                    valign: 'middle'
+                                Label:
+                                    text: 'cible en pointillés'
+                                    font_size: 12
+                                    color: COLOR_TEXT_MUTED
+                                    text_size: self.width, self.height
+                                    halign: 'right'
+                                    valign: 'middle'
+                            CycleChart:
+                                id: cycle_chart
+
+                # --- Avancement OF -------------------------------------------------
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: 46
+                    padding: [12, 4, 12, 6]
+                    spacing: 4
+                    canvas.before:
+                        Color:
+                            rgba: COLOR_WHITE
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [8,]
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        Label:
+                            id: reste_p_l
+                            text: 'Restante'
+                            font_size: 12
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            size_hint_x: 0.5
+                        Label:
+                            id: qtRestante
+                            text: '0'
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'left'
+                            valign: 'middle'
+                            size_hint_x: 0.6
+                        Label:
+                            id: step
+                            text: ''
+                            size_hint_x: 0.2
+                        Label:
+                            id: plan_p_l
+                            text: 'Planifiée'
+                            font_size: 12
+                            color: COLOR_TEXT_MUTED
+                            text_size: self.width, self.height
+                            halign: 'right'
+                            valign: 'middle'
+                            size_hint_x: 0.5
+                        Label:
+                            id: quantite1
+                            text: ''
+                            bold: True
+                            font_size: 15
+                            color: COLOR_NAVY
+                            text_size: self.width, self.height
+                            halign: 'right'
+                            valign: 'middle'
+                            size_hint_x: 0.5
+                    ProgressBar:
+                        id: progression
+                        size_hint_y: None
+                        height: 10
+                        min: 0
+                        max: 100
+                        value: 0
+
+                # --- Actions ---------------------------------------------------------
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: 56
+                    spacing: 6
+                    ModernButton:
+                        id: rejet_p_l
+                        text: '+ Rejet'
+                        background_color: COLOR_RED
+                        font_size: 16
+                        on_press: root.Btn_ajout_rejet()
+                        disabled:True
+                    ModernButton:
+                        id: purge_p_l
+                        text: '+ Purge'
+                        background_color: COLOR_NAVY_LIGHT
+                        font_size: 16
+                        on_press: root.Btn_ajout_purge()
+                    ModernButton:
+                        id: ferme
+                        text: 'Empreintes'
+                        background_color: COLOR_NAVY_LIGHT
+                        font_size: 16
+                        on_press: root.Btn_ferme_emp()
+                    ModernButton:
+                        id: Arrets
+                        text: 'Signaler un Arrêt'
+                        background_color: COLOR_AMBER
+                        font_size: 16
+                        on_press: root.Btn_select_arret()
+                    ModernButton:
+                        id: fin_prod
+                        text: 'Fin de production'
+                        background_color: COLOR_RED
+                        font_size: 16
+                        on_release: root.Btn_fin_shopOrder()
+
+            # --- Alerte temps de cycle : superposée à la bande infos OF ---------
+            BoxLayout:
+                id: ct_banner
+                orientation: 'horizontal'
+                spacing: 8
+                padding: [12, 4, 6, 4]
+                size_hint: None, None
+                pos: info_row.pos
+                size: info_row.size if root.ct_alerte else (0, 0)
+                opacity: 1 if root.ct_alerte else 0
+                canvas.before:
+                    Color:
+                        rgba: COLOR_ALERT
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [8,]
+                Label:
+                    text: root.ct_alerte_text
+                    bold: True
+                    font_size: 17
+                    color: COLOR_WHITE
+                    halign: 'left'
+                    valign: 'middle'
+                    text_size: self.width, self.height
+                    shorten: True
+                    max_lines: 1
+                ModernButton:
+                    text: 'CORRIGER LE CT'
+                    background_color: COLOR_WHITE
+                    color: COLOR_ALERT
+                    font_size: 15
+                    size_hint_x: None
+                    width: 190
+                    disabled: not root.ct_alerte
+                    on_release: root.open_ct_correction_popup()

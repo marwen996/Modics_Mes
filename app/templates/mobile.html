@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d2440">
+<link rel="manifest" href="/manifest.json">
+<title>MODICS</title>
+<style>
+:root{--navy:#0d2440;--navy2:#1a3a5c;--navy3:#274c75;--orange:#f26622;--green:#29994f;--red:#d13d3d;--amber:#eda02e;--blue:#4d85d9;--grey:#667080;--muted:#b8c2d1;--bg:#081628;--fg:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.35 system-ui,-apple-system,Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--navy);border-bottom:3px solid var(--orange)}
+header h1{flex:1;margin:0;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header button{background:none;border:0;color:#fff;font-size:28px;line-height:1;width:44px;height:44px;border-radius:8px}
+header button:active{background:var(--navy3)}
+main{padding:12px;padding-bottom:calc(24px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+.card{background:var(--navy);border-radius:12px;padding:14px;margin-bottom:12px;position:relative}
+.card.click:active{background:var(--navy2)}
+.row{display:flex;align-items:center;gap:8px}
+.grow{flex:1;min-width:0}
+.name{font-size:20px;font-weight:700}
+.sub{color:var(--muted);font-size:14px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;margin-top:8px;margin-right:6px}
+.badge.green{background:var(--green)}.badge.red{background:var(--red)}.badge.amber{background:var(--amber);color:#201400}
+.badge.blue{background:var(--blue)}.badge.gray{background:var(--grey)}
+.blink{animation:bl 1s infinite alternate}@keyframes bl{from{opacity:1}to{opacity:.45}}
+.bar{height:10px;border-radius:5px;background:#000a;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;background:var(--orange)}
+.edit{position:absolute;top:8px;right:8px;background:none;border:0;color:var(--muted);font-size:20px;width:40px;height:40px;border-radius:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--navy);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:24px}.stat span{font-size:12px;color:var(--muted)}
+h3{margin:18px 2px 8px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.btn{display:block;width:100%;min-height:56px;border:0;border-radius:10px;font-size:18px;font-weight:700;color:#fff;background:var(--navy3);padding:10px 14px}
+.btn:active{filter:brightness(1.25)}.btn:disabled{opacity:.45}
+.btn.ok{background:var(--green)}.btn.warn{background:var(--amber);color:#201400}.btn.bad{background:var(--red)}
+.btn.ghost{background:var(--grey)}.btn.orange{background:var(--orange)}
+.alert{border-left:6px solid var(--amber);background:#3a2c0e}
+.alert.red{border-color:var(--red);background:#3a1414}
+.q{display:flex;gap:8px;align-items:center;background:var(--navy);border-radius:10px;padding:10px;margin-bottom:8px}
+.q .btn{width:110px;min-height:48px;font-size:16px}
+#modal{position:fixed;inset:0;background:#000b;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+#modal[hidden]{display:none}
+.sheet{background:var(--navy);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet h2{margin:0 0 10px;font-size:20px}
+.mbtns{display:grid;gap:8px;margin-top:14px}
+.sheet label{display:block;margin:10px 0 4px;color:var(--muted);font-size:14px}
+.sheet input{width:100%;font-size:22px;padding:12px;border-radius:8px;border:2px solid var(--navy3);background:#f4f6f9;color:#111}
+.sheet input:focus{outline:0;border-color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn.sug{min-height:44px;font-size:15px;text-align:left;margin-top:6px;background:var(--navy3)}
+.err{color:#ff9d8f;min-height:20px;margin-top:6px;font-size:14px}
+#toast{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;padding:14px;border-radius:10px;font-weight:700;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;max-width:616px;margin:0 auto}
+#toast.show{opacity:1}#toast.ok{background:var(--green)}#toast.err{background:var(--red)}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+</style>
+</head>
+<body>
+<header>
+  <button id="back" hidden aria-label="Retour">&#8249;</button>
+  <h1 id="title">MODICS</h1>
+  <button id="add" aria-label="Ajouter une presse">+</button>
+</header>
+<main id="view"></main>
+<div id="modal" hidden></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* URL de base du serveur MODICS (proxy vers les Pi).
+   Quand l'app est servie par Flask (http ou https), location.origin pointe vers le bon serveur.
+   En mode fichier local (file://) les URLs proxy ne sont pas disponibles. */
+const _pb = location.origin.startsWith("http") ? location.origin : "";
+
+/* ---------- presses enregistrées (stockées dans le navigateur du téléphone) ---------- */
+function loadMachines() {
+  try {
+    return (JSON.parse(localStorage.getItem("modics_machines")) || []).map(m =>
+      m.url ? m : { name: m.name, url: "http://" + m.host + ":" + (m.port || 8080), key: m.key || "" });
+  } catch (e) { return []; }
+}
+function saveMachines() { try { localStorage.setItem("modics_machines", JSON.stringify(machines)); } catch (e) {} }
+const mid = m => m.url;
+const shortUrl = m => m.url.replace(/^https?:\/\/[^/]+\/proxy\//, "proxy/").replace(/^https?:\/\//, "");
+function normalizeUrl(s) {
+  s = String(s || "").trim().replace(/\/+$/, "").replace(/\/app$/i, "");
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^[\d.]+$/.test(s)) return "http://" + s + ":8080";
+  return (/^[\d.]+:\d+$/.test(s) ? "http://" : "https://") + s;
+}
+
+/* Presses avec URL proxy (via serveur MODICS).
+   Les machines sans terminal Pi (pas d'URL dans machines.json) ne sont pas listées.
+   Clé vide : le proxy du serveur utilise celle de machines.json (jamais de clé dans ce fichier). */
+const DEFAULT_MACHINES = !_pb ? [] : [
+  {name:"PRS 2",  url:_pb+"/proxy/prs2",  key:""},
+  {name:"PRS 4",  url:_pb+"/proxy/prs4",  key:""},
+  {name:"PRS 5",  url:_pb+"/proxy/prs5",  key:""},
+  {name:"PRS 6",  url:_pb+"/proxy/prs6",  key:""},
+  {name:"PRS 29", url:_pb+"/proxy/prs29", key:""},
+  {name:"PRS 40", url:_pb+"/proxy/prs40", key:""},
+  {name:"PRS 63", url:_pb+"/proxy/prs63", key:""},
+  {name:"PRS 66", url:_pb+"/proxy/prs66", key:""},
+  {name:"PRS 69", url:_pb+"/proxy/prs69", key:""},
+  {name:"PRS 70", url:_pb+"/proxy/prs70", key:""},
+  {name:"PRS 71", url:_pb+"/proxy/prs71", key:""},
+  {name:"PRS 72", url:_pb+"/proxy/prs72", key:""},
+  {name:"PRS 74", url:_pb+"/proxy/prs74", key:""},
+  {name:"PRS 75", url:_pb+"/proxy/prs75", key:""},
+  {name:"PRS 77", url:_pb+"/proxy/prs77", key:""},
+  {name:"PRS 81", url:_pb+"/proxy/prs81", key:""},
+  {name:"PRS 84", url:_pb+"/proxy/prs84", key:""}
+];
+
+let machines = loadMachines();
+try {
+  /* v2 : migration vers les URLs proxy (mise à jour des entrées existantes par nom) */
+  if (!localStorage.getItem("modics_seeded_v2")) {
+    DEFAULT_MACHINES.forEach(d => {
+      if (!d.url) return;
+      const i = machines.findIndex(y => y.name === d.name);
+      if (i >= 0) machines[i] = d; else machines.push(d);
+    });
+    localStorage.setItem("modics_seeded_v2", "1");
+    saveMachines();
+  }
+} catch (e) {}
+
+if (!machines.length && _pb) {
+  machines.push({ name: "Cette presse", url: _pb + "/proxy/prs81", key: "" });
+  saveMachines();
+}
+
+const data = {};
+const queues = {};
+let current = null;
+
+/* ---------- appels API ---------- */
+async function api(m, method, path, body) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(m.url + "/api/v1/" + path, {
+      method: method,
+      headers: { "Content-Type": "application/json", "X-Api-Key": m.key || "" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: ctl.signal
+    });
+    let j = {};
+    try { j = await r.json(); } catch (e) {}
+    return { status: r.status, json: j };
+  } finally { clearTimeout(timer); }
+}
+
+async function pollOne(m) {
+  if (location.protocol === "https:" && m.url.startsWith("http://")) {
+    data[mid(m)] = { ok: false, err: "Adresse http:// bloquée depuis une page https", at: Date.now() };
+    return;
+  }
+  try {
+    const r = await api(m, "GET", "status");
+    if (r.status === 200) data[mid(m)] = { ok: true, s: r.json, at: Date.now() };
+    else data[mid(m)] = { ok: false, err: r.status === 401 ? "Clé API invalide" : "Erreur " + r.status, at: Date.now() };
+  } catch (e) {
+    data[mid(m)] = { ok: false, err: "Hors ligne", at: Date.now() };
+  }
+}
+async function pollAll() { await Promise.all(machines.map(pollOne)); render(); }
+
+async function act(m, name, body, okMsg) {
+  try {
+    const r = await api(m, "POST", "action/" + name, body || {});
+    if (r.status === 200) { toast(okMsg || "OK", "ok"); if (navigator.vibrate) navigator.vibrate(40); }
+    else toast((r.json && r.json.error) || ("Erreur " + r.status), "err");
+  } catch (e) { toast("Presse injoignable", "err"); }
+  await pollOne(m);
+  delete queues[mid(m)];
+  render();
+}
+
+/* ---------- affichage ---------- */
+let toastTimer = null;
+function toast(msg, kind) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "show " + (kind || "ok");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ""; }, 3500);
+}
+
+function fmtDur(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), mn = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return (h ? h + " h " : "") + (h || mn ? String(mn).padStart(h ? 2 : 1, "0") + " min " : "") + String(s).padStart(2, "0") + " s";
+}
+function stopElapsed(d) {
+  if (!d.s.stop_since || !d.s.time) return "";
+  const base = new Date(d.s.time) - new Date(d.s.stop_since);
+  return fmtDur((base + (Date.now() - d.at)) / 1000);
+}
+const pct = (a, b) => (b > 0 ? Math.min(100, Math.round(100 * a / b)) : 0);
+const num = v => (v == null || v === "" ? "—" : v);
+
+function badge(d) {
+  if (!d) return ["Chargement…", "gray"];
+  if (!d.ok) return [d.err, "gray"];
+  const s = d.s;
+  if (!s.of_active) return ["Aucun OF" + (s.queue_length ? " · " + s.queue_length + " en attente" : ""), "amber"];
+  if (s.needs_declaration) return ["Cause à déclarer", "red blink"];
+  if (s.state === "Production") return ["Production", "green"];
+  if (s.state === "Non planifié") return ["Arrêt planifié", "blue"];
+  if (s.state === "Arrêt") return ["Arrêt" + (s.stop_code ? " · " + s.stop_code : ""), "red"];
+  return [s.state || "—", "gray"];
+}
+
+function render() {
+  const m = machines.find(x => mid(x) === current);
+  if (current && !m) current = null;
+  $("#back").hidden = !current;
+  $("#add").hidden = !!current;
+  if (current) { $("#title").textContent = (data[current] && data[current].ok && data[current].s.machine) || m.name; renderDetail(m); }
+  else { $("#title").textContent = "MODICS · Presses"; renderList(); }
+}
+
+function renderList() {
+  const v = $("#view");
+  if (!machines.length) { v.innerHTML = '<div class="empty">Aucune presse enregistrée.<br>Touchez + pour en ajouter une.</div>'; return; }
+  v.innerHTML = machines.map(m => {
+    const d = data[mid(m)], b = badge(d), s = d && d.ok ? d.s : null;
+    let body = "";
+    if (s && s.of_active) {
+      body = '<div class="sub">' + esc(s.shop_order) + " · " + esc(s.part_number) + "</div>" +
+        '<div class="bar"><i style="width:' + pct(s.produced, s.quantity) + '%"></i></div>' +
+        '<div class="sub">' + num(s.produced) + " / " + num(s.quantity) + " pcs · TRS " + (s.trs_global == null ? "—" : s.trs_global + " %") + "</div>";
+    }
+    return '<div class="card click" data-id="' + esc(mid(m)) + '"><button class="edit" data-edit="' + esc(mid(m)) + '" aria-label="Modifier">&#9998;</button>' +
+      '<div class="name">' + esc((s && s.machine) || m.name) + '</div><div class="sub">' + esc(shortUrl(m)) + "</div>" +
+      '<span class="badge ' + b[1] + '">' + esc(b[0]) + "</span>" +
+      (s && s.ct_alert ? '<span class="badge amber">Alerte CT</span>' : "") + body + "</div>";
+  }).join("");
+}
+
+function renderDetail(m) {
+  const d = data[mid(m)], v = $("#view");
+  if (!d) { v.innerHTML = '<div class="empty">Chargement…</div>'; return; }
+  if (!d.ok) {
+    v.innerHTML = '<div class="card alert red"><b>' + esc(d.err) + '</b><div class="sub" style="white-space:normal">' + esc(shortUrl(m)) + "</div></div>" +
+      '<button class="btn ghost" id="retry">Réessayer</button>';
+    return;
+  }
+  const s = d.s, b = badge(d), stopped = s.state === "Arrêt" || s.state === "Non planifié";
+  let h = '<div class="card"><span class="badge ' + b[1] + '" style="margin-top:0">' + esc(b[0]) + "</span>";
+  if (s.of_active) {
+    h += '<div class="name" style="margin-top:8px">' + esc(s.shop_order) + '</div><div class="sub">' + esc(s.part_number) +
+      " · outil " + esc(s.tool_number) + " (" + num(s.cavities) + ' empr.)</div><div class="bar"><i style="width:' + pct(s.produced, s.quantity) + '%"></i></div>';
+  } else h += '<div class="sub" style="margin-top:8px">Aucun ordre de fabrication en cours</div>';
+  h += "</div>";
+
+  if (s.of_active) {
+    h += '<div class="grid3"><div class="stat"><b>' + num(s.produced) + "</b><span>Produites</span></div>" +
+      '<div class="stat"><b>' + num(s.good) + "</b><span>Bonnes</span></div>" +
+      '<div class="stat"><b>' + num(s.rejects) + "</b><span>Rejets</span></div>" +
+      '<div class="stat"><b>' + num(s.remaining) + "</b><span>Restant</span></div>" +
+      '<div class="stat"><b>' + num(s.cycle_time_target) + " s</b><span>CT cible</span></div>" +
+      '<div class="stat"><b>' + (s.trs_global == null ? "—" : s.trs_global + " %") + "</b><span>TRS</span></div></div>";
+
+    if (s.ct_alert) {
+      h += '<div class="card alert" style="margin-top:12px"><b>' + esc(s.ct_alert_text || "Alerte temps de cycle") + '</b>' +
+        '<div class="sub" style="white-space:normal">Corrigez le CT saisi pour fiabiliser la performance et l\'OEE.</div>' +
+        '<button class="btn warn" id="ct" style="margin-top:10px">Corriger le temps de cycle</button></div>';
+    }
+
+    h += "<h3>Arrêt</h3>";
+    if (stopped && s.needs_declaration) {
+      h += '<div class="card alert red"><b>Arrêt depuis ' + esc(stopElapsed(d)) + '</b><div class="sub" style="white-space:normal">Choisissez la cause pour continuer.</div></div><div class="grid" id="causes">' +
+        (s.stop_causes || []).map(c => '<button class="btn ' + (c === "Arrêt planifié" ? "" : "warn") + '" data-cause="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>";
+    } else if (stopped) {
+      h += '<div class="card alert red"><b>' + esc(s.stop_code || "Arrêt") + '</b><div class="sub">depuis ' + esc(stopElapsed(d)) + '</div></div>' +
+        '<button class="btn ok" id="endstop">FIN D\'ARRÊT</button>';
+    } else {
+      h += '<button class="btn warn" id="stop">Signaler un arrêt</button>';
+    }
+
+    h += '<h3>Pièces</h3><div class="grid"><button class="btn" id="rej">Ajouter des rejets</button><button class="btn" id="purge">Ajouter une purge (g)</button></div>';
+    if (s.reject_mode) h += '<div class="sub" style="margin-top:8px">Signal rebut actif : les cycles comptent en rejets.</div>';
+    h += '<h3>Ordre de fabrication</h3><button class="btn bad" id="finish">Terminer l\'OF</button>';
+  } else {
+    h += '<h3>OF en attente</h3><div id="qbox"><div class="empty">Chargement…</div></div>' +
+      '<button class="btn orange" id="manual" style="margin-top:8px">Saisir un nouvel OF</button>';
+  }
+  v.innerHTML = h;
+  if (!s.of_active) loadQueue(m);
+}
+
+async function loadQueue(m) {
+  const id = mid(m);
+  try {
+    const r = await api(m, "GET", "queue");
+    if (r.status === 200) queues[id] = r.json.orders || [];
+  } catch (e) {}
+  const box = $("#qbox");
+  if (!box || current !== id) return;
+  const q = queues[id];
+  if (!q || !q.length) { box.innerHTML = '<div class="empty">Aucun OF en attente.<br>La file est alimentée par l\'ERP (IFS).</div>'; return; }
+  box.innerHTML = q.map((o, i) => '<div class="q"><div class="grow"><b>' + esc(o.shop_order) + '</b><div class="sub">' + esc(o.part_number) + " · " + esc(o.quantity) +
+    " pcs · " + esc(o.cycle_time) + " s · " + esc(o.cavities) + ' empr.</div></div><button class="btn ok" data-launch="' + i + '">Lancer</button></div>').join("");
+}
+
+/* ---------- fenêtres ---------- */
+function modal(title, bodyHtml, buttons, onOpen) {
+  const el = $("#modal");
+  el.innerHTML = '<div class="sheet"><h2>' + esc(title) + '</h2><div>' + bodyHtml + '</div><div class="mbtns"></div></div>';
+  const box = el.querySelector(".mbtns");
+  buttons.forEach(b => {
+    const x = document.createElement("button");
+    x.className = "btn " + (b.cls || "");
+    x.textContent = b.label;
+    x.onclick = () => { const r = b.fn ? b.fn(el) : undefined; if (r !== false) closeModal(); };
+    box.appendChild(x);
+  });
+  el.hidden = false;
+  if (onOpen) onOpen(el);
+}
+function closeModal() { const el = $("#modal"); el.hidden = true; el.innerHTML = ""; }
+const CANCEL = { label: "Annuler", cls: "ghost" };
+
+function confirmBox(title, text, label, cls, fn) {
+  modal(title, '<div class="sub" style="white-space:normal;font-size:16px;color:#fff">' + text + "</div>", [CANCEL, { label: label, cls: cls, fn: fn }]);
+}
+
+function askNumber(title, label, decimal, cb) {
+  modal(title, "<label>" + esc(label) + '</label><input id="num" type="number" inputmode="' + (decimal ? "decimal" : "numeric") + '" step="' + (decimal ? "0.1" : "1") + '" min="0"><div class="err" id="merr"></div>',
+    [CANCEL, { label: "Valider", cls: "ok", fn: el => {
+      const v = parseFloat(el.querySelector("#num").value);
+      if (!(v > 0)) { el.querySelector("#merr").textContent = "Saisir un nombre supérieur à 0"; return false; }
+      cb(v);
+    } }],
+    el => setTimeout(() => el.querySelector("#num").focus(), 60));
+}
+
+function machineForm(m) {
+  const isNew = !m;
+  const x = m || { name: "", url: "", key: "" };
+  const btns = [CANCEL];
+  if (!isNew) btns.push({ label: "Supprimer", cls: "bad", fn: () => { machines = machines.filter(y => mid(y) !== mid(m)); saveMachines(); render(); } });
+  btns.push({ label: "Enregistrer", cls: "ok", fn: el => {
+    const name = el.querySelector("#f_name").value.trim(), url = normalizeUrl(el.querySelector("#f_url").value);
+    const key = el.querySelector("#f_key").value.trim();
+    try { new URL(url); } catch (e) { el.querySelector("#merr").textContent = "Adresse invalide"; return false; }
+    if (machines.some(y => mid(y) === url && (isNew || mid(y) !== mid(m)))) { el.querySelector("#merr").textContent = "Cette adresse est déjà enregistrée"; return false; }
+    const updated = { name: name || url.replace(/^https?:\/\//, ""), url: url, key: key };
+    if (isNew) machines.push(updated); else machines = machines.map(y => (mid(y) === mid(m) ? updated : y));
+    saveMachines(); pollAll();
+  } });
+  modal(isNew ? "Ajouter une presse" : "Modifier la presse",
+    '<label>Nom</label><input id="f_name" value="' + esc(x.name) + '" placeholder="PRS 79">' +
+    '<label>Adresse de la presse</label><input id="f_url" value="' + esc(x.url) + '" inputmode="url" autocapitalize="off" autocomplete="off" placeholder="' + esc(_pb ? _pb + "/proxy/prs79" : "192.168.80.79") + '">' +
+    '<div class="sub" style="white-space:normal;margin-top:4px">Via serveur MODICS (interne ou tunnel) : ' + esc(_pb || "http://SERVEUR:5050") + '/proxy/prsXX</div>' +
+    '<label>Clé API (config_modics.ini, [api] api_key)</label><input id="f_key" value="' + esc(x.key) + '" autocapitalize="off" autocomplete="off">' +
+    '<div class="err" id="merr"></div>', btns);
+}
+
+/* ---------- saisie manuelle d'un nouvel OF ---------- */
+function manualForm(m) {
+  const F = [
+    ["shop_order", "Shop Order", "text"], ["part_number", "Part Number", "text"], ["tool_number", "Numéro outil", "text"],
+    ["cycle_time", "Temps de cycle (s)", "number"], ["cavities", "Empreintes", "number"],
+    ["material_ref", "Référence matière", "text"], ["quantity", "Quantité demandée", "number"]
+  ];
+  const inp = k => { const f = F.find(x => x[0] === k); return '<label>' + f[1] + '</label><input id="o_' + k + '" type="' + f[2] + '"' +
+    (f[2] === "number" ? ' inputmode="' + (k === "cycle_time" ? "decimal" : "numeric") + '" step="' + (k === "cycle_time" ? "0.1" : "1") + '" min="0"' : ' autocapitalize="characters" autocomplete="off"') + ">"; };
+  const html = inp("shop_order") + inp("part_number") + '<div id="sug"></div>' + inp("tool_number") +
+    '<div class="two"><div>' + inp("cycle_time") + "</div><div>" + inp("cavities") + "</div></div>" +
+    '<div class="two"><div>' + inp("material_ref") + "</div><div>" + inp("quantity") + "</div></div>" +
+    '<div class="err" id="merr"></div>';
+  let busy = false;
+  modal("Nouvel OF — " + m.name, html, [CANCEL, { label: "Lancer l'OF", cls: "ok", fn: el => {
+    if (busy) return false;
+    const g = k => el.querySelector("#o_" + k).value.trim();
+    const body = {};
+    for (const f of F) {
+      const v = g(f[0]);
+      if (!v) { el.querySelector("#merr").textContent = "Champ obligatoire : " + f[1]; el.querySelector("#o_" + f[0]).focus(); return false; }
+      if (f[2] === "number") {
+        const n = parseFloat(v.replace(",", "."));
+        if (!(n > 0)) { el.querySelector("#merr").textContent = f[1] + " : nombre supérieur à 0 attendu"; el.querySelector("#o_" + f[0]).focus(); return false; }
+        body[f[0]] = f[0] === "cycle_time" ? n : Math.round(n);
+      } else body[f[0]] = v;
+    }
+    busy = true;
+    el.querySelector("#merr").textContent = "Envoi…";
+    api(m, "POST", "action/launch", body).then(async r => {
+      busy = false;
+      if (r.status === 200) { closeModal(); toast("OF " + body.shop_order + " lancé", "ok"); if (navigator.vibrate) navigator.vibrate(40); await pollOne(m); delete queues[mid(m)]; render(); }
+      else { const e = $("#merr"); if (e) e.textContent = (r.json && r.json.error) || ("Erreur " + r.status); }
+    }).catch(() => { busy = false; const e = $("#merr"); if (e) e.textContent = "Presse injoignable"; });
+    return false;
+  } }], el => {
+    setTimeout(() => el.querySelector("#o_shop_order").focus(), 60);
+    let timer = null, last = "";
+    el.querySelector("#o_part_number").addEventListener("input", ev => {
+      clearTimeout(timer);
+      const q = ev.target.value.trim();
+      last = q;
+      const box = el.querySelector("#sug");
+      if (q.length < 2) { box.innerHTML = ""; return; }
+      timer = setTimeout(async () => {
+        try {
+          const r = await api(m, "GET", "parts?q=" + encodeURIComponent(q));
+          if (last !== q || !el.contains(box)) return;
+          const list = (r.json && r.json.parts) || [];
+          box.innerHTML = list.length ? '<div class="sub" style="margin:6px 0">' + list.length + " résultat(s) — touchez pour remplir</div>" +
+            list.map((p, i) => '<button class="btn sug" data-i="' + i + '">' + esc(p.part_number) + " · outil " + esc(p.tool_number) + " · " + esc(p.cavities) + " empr." +
+              (p.cycle_time ? " · " + esc(p.cycle_time) + " s" : "") + "</button>").join("") : '<div class="sub" style="margin:6px 0">Aucun résultat dans Machine Group (saisie manuelle possible)</div>';
+          box.querySelectorAll(".sug").forEach(b => b.addEventListener("click", e2 => {
+            e2.stopPropagation();
+            const p = list[Number(b.dataset.i)];
+            const set = (k, v) => { if (v != null && v !== "") el.querySelector("#o_" + k).value = v; };
+            set("part_number", p.part_number); set("tool_number", p.tool_number); set("cavities", p.cavities);
+            set("cycle_time", p.cycle_time); set("material_ref", p.material_ref);
+            box.innerHTML = ""; el.querySelector("#merr").textContent = "";
+          }));
+        } catch (e) {}
+      }, 300);
+    });
+  });
+}
+
+/* ---------- événements ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, .card.click");
+  if (!t) return;
+  const m = machines.find(x => mid(x) === current);
+  if (t.dataset.edit) { e.stopPropagation(); return machineForm(machines.find(x => mid(x) === t.dataset.edit)); }
+  if (t.classList.contains("card") && t.dataset.id) { current = t.dataset.id; history.pushState({ d: 1 }, ""); render(); return; }
+  if (t.id === "back") return history.back();
+  if (t.id === "add") return machineForm(null);
+  if (!m) return;
+  const s = data[mid(m)] && data[mid(m)].s;
+  if (t.id === "retry") return pollAll();
+  if (t.dataset.cause) {
+    const c = t.dataset.cause;
+    return confirmBox("Déclarer l'arrêt", "Cause : <b>" + esc(c) + "</b>", "Confirmer", "ok", () => act(m, "declare-stop", { cause: c }, "Arrêt déclaré : " + c));
+  }
+  if (t.id === "stop") {
+    return modal("Signaler un arrêt", '<div class="grid" id="mc">' + ((s && s.stop_causes) || []).map(c => '<button class="btn warn" data-mc="' + esc(c) + '">' + esc(c) + "</button>").join("") + "</div>", [CANCEL],
+      el => el.querySelectorAll("[data-mc]").forEach(b => b.addEventListener("click", ev => { ev.stopPropagation(); const c = b.dataset.mc; closeModal(); act(m, "declare-stop", { cause: c }, "Arrêt déclaré : " + c); })));
+  }
+  if (t.id === "endstop") return confirmBox("Fin d'arrêt", "Confirmer la fin de l'arrêt (cause : <b>" + esc(s.stop_code) + "</b>) ?", "Fin d'arrêt", "ok", () => act(m, "end-stop", {}, "Fin d'arrêt enregistrée"));
+  if (t.id === "rej") return askNumber("Rejets", "Quantité de rejets à ajouter", false, v => act(m, "reject", { qty: v }, v + " rejet(s) ajouté(s)"));
+  if (t.id === "purge") return askNumber("Purge", "Purge à ajouter (g)", false, v => act(m, "purge", { qty: v }, v + " g de purge ajoutés"));
+  if (t.id === "ct") return askNumber("Corriger le temps de cycle", "Nouveau CT (secondes)", true, v => act(m, "cycle-time", { cycle: v }, "Temps de cycle corrigé"));
+  if (t.id === "manual") return manualForm(m);
+  if (t.id === "finish") return confirmBox("Terminer l'OF", "Terminer l'OF <b>" + esc(s.shop_order) + "</b> ? Le bilan du shift est enregistré. Action définitive.", "Terminer l'OF", "bad", () => act(m, "finish", {}, "OF terminé"));
+  if (t.dataset.launch !== undefined) {
+    const o = (queues[mid(m)] || [])[Number(t.dataset.launch)];
+    if (!o) return;
+    return confirmBox("Lancer l'OF", "<b>" + esc(o.shop_order) + "</b><br>" + esc(o.part_number) + " · " + esc(o.quantity) + " pcs<br>CT " + esc(o.cycle_time) + " s · " + esc(o.cavities) + " empreintes", "Lancer", "ok", () => act(m, "launch", { shop_order: o.shop_order }, "OF " + o.shop_order + " lancé"));
+  }
+});
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+window.addEventListener("popstate", () => { current = null; closeModal(); render(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pollAll(); });
+
+render();
+pollAll();
+setInterval(() => { if (!document.hidden) pollAll(); }, 4000);
+</script>
+</body>
+</html>

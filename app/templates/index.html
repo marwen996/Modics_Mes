@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}MODICS — Tableau de bord{% endblock %}
+{% block body_class %}is-loading{% endblock %}
+
+{% block header %}
+<div class="brand">
+  <div class="brand-row"><h1 class="brand-name" data-i18n="title"></h1><span class="chip" data-i18n="i50"></span></div>
+  <span class="brand-sub" data-i18n="subtitle"></span>
+  <span class="live" id="live"><i></i><span id="live-text"></span></span>
+</div>
+
+<form id="filters" class="filters" onsubmit="return false">
+  <div class="seg machines" role="tablist">
+    {% if machines|length > 1 %}
+    <button type="button" class="machine active" data-machine="" data-i18n="all_f"></button>
+    {% for m in machines %}<button type="button" class="machine" data-machine="{{ m }}">{{ m }}</button>{% endfor %}
+    {% else %}
+    {% for m in machines %}<button type="button" class="machine active" data-machine="{{ m }}">{{ m }}</button>{% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Préréglages de période : calculés à partir du dernier jour de données -->
+  <div class="seg presets" id="presets">
+    <button type="button" data-preset="today" data-i18n="p_today"></button>
+    <button type="button" data-preset="7" data-i18n="p_7"></button>
+    <button type="button" data-preset="30" data-i18n="p_30"></button>
+    <button type="button" data-preset="all" data-i18n="p_all"></button>
+  </div>
+
+  <div class="range">
+    <input type="date" name="start" value="{{ min_date }}" min="{{ min_date }}" max="{{ max_date }}">
+    <span>→</span>
+    <input type="date" name="end" value="{{ max_date }}" min="{{ min_date }}" max="{{ max_date }}">
+  </div>
+
+  <select name="shift" aria-label="Équipe">
+    <option value="" data-i18n="all_shifts"></option>
+    {% for s in shifts %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+  </select>
+</form>
+{% endblock %}
+
+{% block content %}
+<!-- Bandeau KPI : valeur, variation vs période précédente, sparkline journalière -->
+<section class="kpis">
+  <article class="kpi hero">
+    <div class="kpi-top"><span class="kpi-label" data-i18n="k_oee"></span><span class="delta" id="d-oee"></span></div>
+    <div class="kpi-value mono" id="k-oee">—</div>
+    <svg class="spark" id="sp-oee" aria-hidden="true"></svg>
+    <div class="apq">
+      <div><span data-i18n="k_av"></span><b class="mono" id="k-av">—</b><i><u id="b-av"></u></i></div>
+      <div><span data-i18n="k_pf"></span><b class="mono" id="k-pf">—</b><i><u id="b-pf"></u></i></div>
+      <div><span data-i18n="k_ql"></span><b class="mono" id="k-ql">—</b><i><u id="b-ql"></u></i></div>
+    </div>
+  </article>
+  <article class="kpi"><div class="kpi-top"><span class="kpi-label" data-i18n="k_good"></span><span class="delta" id="d-good"></span></div><div class="kpi-value mono" id="k-good">—</div><svg class="spark" id="sp-good" aria-hidden="true"></svg></article>
+  <article class="kpi"><div class="kpi-top"><span class="kpi-label" data-i18n="k_rej"></span><span class="delta" id="d-rej"></span></div><div class="kpi-value mono reject" id="k-rej">—</div><div class="kpi-sub" id="k-scrap"></div><svg class="spark" id="sp-rej" aria-hidden="true"></svg></article>
+  <article class="kpi"><div class="kpi-top"><span class="kpi-label" data-i18n="k_run"></span><span class="delta" id="d-run"></span></div><div class="kpi-value mono" id="k-run">—</div><svg class="spark" id="sp-run" aria-hidden="true"></svg></article>
+  <article class="kpi"><div class="kpi-top"><span class="kpi-label" data-i18n="k_down"></span><span class="delta" id="d-down"></span></div><div class="kpi-value mono down" id="k-down">—</div><svg class="spark" id="sp-down" aria-hidden="true"></svg></article>
+  <article class="kpi"><div class="kpi-top"><span class="kpi-label" data-i18n="k_stops"></span><span class="delta" id="d-stops"></span></div><div class="kpi-value mono" id="k-stops">—</div><svg class="spark" id="sp-stops" aria-hidden="true"></svg></article>
+</section>
+
+<!-- Priorités du poste : ce qui demande l'attention des équipes maintenant (calculé côté client) -->
+<section class="focus">
+  <article class="panel">
+    <div class="panel-head"><h2 data-i18n="fp_attention"></h2><span class="count" id="fp-day"></span></div>
+    <ul class="fp-list" id="fp-list"></ul>
+  </article>
+  <article class="panel">
+    <div class="panel-head"><h2 data-i18n="fp_cause"></h2></div>
+    <div id="fp-cause"></div>
+  </article>
+  <article class="panel">
+    <div class="panel-head"><h2 data-i18n="fp_shifts"></h2></div>
+    <div id="fp-shifts"></div>
+  </article>
+</section>
+
+{% if ai_enabled %}
+<!-- Analyse IA (Claude) : déclenchée à la demande, chaque appel est facturé. Affichée seulement si ANTHROPIC_API_KEY est configurée. -->
+<section class="panel ai">
+  <div class="panel-head">
+    <h2 data-i18n="ai_title"></h2>
+    <div class="ai-bar">
+      <span class="count" id="ai-meta"></span>
+      <button type="button" class="btn primary" id="ai-run"></button>
+    </div>
+  </div>
+  <div id="ai-out" class="ai-out"><div class="empty" data-i18n="ai_hint"></div></div>
+  <form id="ai-ask" class="ai-ask" onsubmit="return false">
+    <input type="text" name="q" maxlength="1000" data-i18n-ph="ai_ph">
+    <button type="submit" class="btn" data-i18n="ai_ask"></button>
+  </form>
+  <div id="ai-answer" class="ai-answer" hidden></div>
+</section>
+{% endif %}
+
+<!-- Grille TRS jour × équipe : l'élément central -->
+<section class="panel">
+  <div class="panel-head">
+    <h2 data-i18n="grid_title"></h2>
+    <div class="legend">
+      <span><i style="background:var(--good)"></i><span id="lg-good"></span></span>
+      <span><i style="background:var(--warn)"></i><span id="lg-warn"></span></span>
+      <span><i style="background:var(--bad)"></i><span id="lg-bad"></span></span>
+      <span><i style="background:var(--idle)"></i><span data-i18n="lg_idle"></span></span>
+      <button type="button" class="btn small" id="th-btn" aria-expanded="false" aria-controls="th-form" data-i18n="th_btn"></button>
+    </div>
+  </div>
+  <!-- Seuils d'alerte du TRS : enregistrés dans ce navigateur (localStorage), appliqués à la grille et aux priorités -->
+  <form id="th-form" class="th-form" hidden onsubmit="return false">
+    <label><span data-i18n="th_good"></span><input type="number" name="good" min="1" max="200" step="1"> %</label>
+    <label><span data-i18n="th_warn"></span><input type="number" name="warn" min="0" max="199" step="1"> %</label>
+    <button type="button" class="btn small" id="th-reset" data-i18n="th_reset"></button>
+    <span class="th-err" id="th-err" role="alert"></span>
+  </form>
+  <div id="grid" class="grid"></div>
+</section>
+
+<div class="two">
+  <section class="panel"><div class="panel-head"><h2 data-i18n="c_trend"></h2></div><div class="chart"><canvas id="c-trend"></canvas></div></section>
+  <section class="panel"><div class="panel-head"><h2 data-i18n="c_codes"></h2></div><div class="chart"><canvas id="c-code"></canvas></div></section>
+</div>
+<div class="two">
+  <section class="panel"><div class="panel-head"><h2 data-i18n="c_machine"></h2></div><div class="chart short"><canvas id="c-machine"></canvas></div></section>
+  <section class="panel"><div class="panel-head"><h2 data-i18n="c_day"></h2></div><div class="chart short"><canvas id="c-day"></canvas></div></section>
+</div>
+
+<!-- Tableaux : en-têtes cliquables pour trier (data-key = champ de l'API) -->
+<section class="panel">
+  <div class="panel-head"><h2 data-i18n="t_stops"></h2><span class="count" id="stops-count"></span></div>
+  <div class="table-wrap">
+    <table id="t-stops" class="sortable">
+      <thead><tr>
+        <th data-key="machine" data-i18n="th_machine"></th><th data-key="start" data-i18n="th_start"></th><th data-key="end" data-i18n="th_end"></th>
+        <th class="num" data-key="duration_min" data-i18n="th_dur"></th><th data-key="code" data-i18n="th_code"></th>
+        <th data-key="shift" data-i18n="th_shift"></th><th data-key="part_no" data-i18n="th_part"></th><th data-key="regleur" data-i18n="th_setter"></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2 data-i18n="t_daily"></h2><span class="count" id="daily-count"></span></div>
+  <div class="table-wrap">
+    <table id="t-daily" class="sortable">
+      <thead><tr>
+        <th data-key="machine" data-i18n="th_machine"></th><th data-key="day" data-i18n="th_day"></th><th data-key="date" data-i18n="th_date"></th>
+        <th data-key="shift" data-i18n="th_shift"></th><th data-key="part_no" data-i18n="th_part"></th>
+        <th class="num" data-key="run_min" data-i18n="th_run"></th><th class="num" data-key="down_min" data-i18n="th_down"></th>
+        <th class="num" data-key="good_qty" data-i18n="th_good"></th><th class="num" data-key="reject_qty" data-i18n="th_rej"></th>
+        <th class="num" data-key="cycle_time" data-i18n="th_cycle"></th><th class="num" data-key="availability" data-i18n="th_av"></th>
+        <th class="num" data-key="performance" data-i18n="th_pf"></th><th class="num" data-key="quality" data-i18n="th_ql"></th>
+        <th class="num" data-key="oee" data-i18n="th_oee"></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}MODICS — Atelier{% endblock %}
+{% block body_class %}ind{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='atelier.css') }}">{% endblock %}
+
+{% block header %}
+<div class="brand">
+  <div class="brand-name" data-i18n="nav_atelier"></div>
+  <span class="brand-sub" id="shift-label"></span>
+  <span class="live off" id="live"><i></i><span id="live-text"></span></span>
+</div>
+<div class="header-right"><div class="clock mono" id="clock">--:--:--</div></div>
+{% endblock %}
+
+{% block content %}
+<div class="at" id="at">
+  <div class="at-banner" id="banner" role="alert" hidden></div>
+
+  <!-- 1. Situation : une phrase + la répartition des presses -->
+  <section class="at-status" id="status" aria-live="polite">
+    <div class="at-status-main">
+      <div class="at-orb" id="orb" aria-hidden="true"></div>
+      <div>
+        <div class="at-headline" id="headline" role="heading" aria-level="1"><span class="sk sk-w60"></span></div>
+        <div class="at-subline" id="subline"><span class="sk sk-w40"></span></div>
+      </div>
+    </div>
+    <div class="at-split">
+      <div class="at-bar" id="bar" role="img"></div>
+      <div class="at-legend" id="legend"></div>
+    </div>
+  </section>
+
+  <div class="at-cols">
+    <!-- 2. Priorités -->
+    <section class="at-panel at-priorities">
+      <div class="at-panel-head">
+        <div class="at-h" role="heading" aria-level="2" data-i18n="todo_title"></div>
+        <span class="at-count" id="todo-count"></span>
+      </div>
+      <ol class="at-todo" id="todo"><li class="at-skel"></li><li class="at-skel"></li><li class="at-skel"></li></ol>
+      <button type="button" class="at-more" id="todo-more" hidden></button>
+    </section>
+
+    <!-- 3. Trois piliers Industrie 5.0 -->
+    <aside class="at-pillars" aria-label="Industrie 5.0">
+      <article class="at-pillar" id="pl-people">
+        <div class="at-pl-tag"><span class="at-pl-dot"></span><span data-i18n="p1_tag"></span></div>
+        <div class="at-pl-num" id="p1-num">—</div>
+        <div class="at-pl-q" id="p1-q"></div>
+        <div class="at-pl-help" id="p1-help"></div>
+      </article>
+      <article class="at-pillar" id="pl-planet">
+        <div class="at-pl-tag"><span class="at-pl-dot"></span><span data-i18n="p2_tag"></span></div>
+        <div class="at-pl-num" id="p2-num">—</div>
+        <div class="at-pl-q" data-i18n="p2_q"></div>
+        <div class="at-pl-help" id="p2-help"></div>
+      </article>
+      <article class="at-pillar" id="pl-resil">
+        <div class="at-pl-tag"><span class="at-pl-dot"></span><span data-i18n="p3_tag"></span></div>
+        <div class="at-pl-num" id="p3-num">—</div>
+        <div class="at-pl-q" data-i18n="p3_q"></div>
+        <div class="at-pl-help" id="p3-help"></div>
+      </article>
+    </aside>
+  </div>
+
+  <!-- 4. Toutes les presses -->
+  <section class="at-panel">
+    <div class="at-panel-head">
+      <div class="at-h" role="heading" aria-level="2" data-i18n="all_title"></div>
+      <input type="search" id="q" class="at-search" data-i18n-ph="search" autocomplete="off" aria-label="Recherche">
+    </div>
+    <div class="at-chips" id="chips" role="group"></div>
+    <div class="at-grid" id="grid"></div>
+    <div class="at-empty" id="grid-empty" hidden data-i18n="no_match"></div>
+  </section>
+
+  <p class="at-foot" data-i18n="legend"></p>
+</div>
+
+<!-- Fiche d'une presse : s'ouvre au clic, se ferme avec Échap -->
+<div class="at-scrim" id="scrim" hidden></div>
+<aside class="at-drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-title" hidden>
+  <div class="at-dr-head">
+    <div><div class="at-dr-title" id="dr-title"></div><div class="at-dr-state" id="dr-state"></div></div>
+    <button type="button" class="at-x" id="dr-close" aria-label="Fermer / Close">✕</button>
+  </div>
+  <div class="at-dr-body" id="dr-body"></div>
+  <a class="at-btn" id="dr-live" href="#"></a>
+</aside>
+
+<div id="machines" data-machines='{{ machines|tojson }}' hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='atelier.js') }}"></script>
+{% endblock %}

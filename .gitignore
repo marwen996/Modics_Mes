@@ -1,0 +1,21 @@
+# Secrets : ne jamais versionner (voir start.example.cmd et app/machines.example.json)
+start.cmd
+app/machines.json
+.env
+*.pem
+*.key
+
+# Journaux, sauvegardes locales, donnees de production
+logs/
+backup_*/
+app/data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Outils locaux
+.claude/
+.vscode/

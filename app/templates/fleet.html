@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}MODICS — Parc{% endblock %}
+{% block body_class %}ind fb{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='fleet.css') }}?v=34">{% endblock %}
+
+{% block header %}
+<div class="brand">
+  <div class="brand-name" data-i18n="title"></div>
+  <span class="brand-sub" data-i18n="subtitle"></span>
+</div>
+<div class="header-right">
+  <button type="button" class="btn" id="tv-btn"></button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Vue globale du parc : même composant en mode bureau (grille défilante) et en mode TV (tout tient sur l'écran).
+     Rempli par static/fleet.js depuis /api/live/fleet ; tout texte passe par textContent. -->
+<div class="fb-wrap" id="wrap">
+  <div class="fb-banner" id="banner" role="alert" hidden></div>
+
+  <header class="fb-top">
+    <div class="fb-headline">
+      <span class="fb-orb" id="orb" aria-hidden="true"></span>
+      <div class="fb-hl-text">
+        <div class="fb-h1" id="headline" role="heading" aria-level="1">…</div>
+        <div class="fb-h2" id="subline"></div>
+      </div>
+    </div>
+    <div class="fb-counts" id="counts" role="group"></div>
+    <div class="fb-tools">
+      <div class="fb-sort" role="group" id="sort"></div>
+      <input type="search" id="q" class="fb-search" autocomplete="off" aria-label="Recherche">
+    </div>
+    <div class="fb-clock-box">
+      <div class="fb-shift" id="shift"></div>
+      <div class="fb-clock mono" id="clock">--:--</div>
+    </div>
+  </header>
+
+  <section class="fb-grid" id="grid" data-level="full" aria-label="Presses"></section>
+  <div class="fb-empty" id="empty" hidden></div>
+
+  <!-- Mode TV : les presses non connectées n'ont qu'une information à donner ; elles tiennent dans une bande compacte
+       et laissent la grille aux presses qui produisent. Elles restent toutes visibles. -->
+  <section class="fb-off" id="off" hidden aria-label="Presses non connectées">
+    <span class="fb-off-lbl" id="off-lbl"></span>
+    <div class="fb-off-list" id="off-list"></div>
+  </section>
+
+  <!-- Mode TV : une alerte à la fois, en grand, en rotation -->
+  <footer class="fb-ticker" id="ticker" aria-live="polite">
+    <span class="fb-tk-sev" id="tk-sev"></span>
+    <span class="fb-tk-who" id="tk-who"></span>
+    <span class="fb-tk-txt" id="tk-txt"></span>
+    <span class="fb-tk-idx mono" id="tk-idx"></span>
+  </footer>
+</div>
+<div id="machines" data-machines='{{ machines|tojson }}' hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='fleet.js') }}?v=34"></script>
+{% endblock %}

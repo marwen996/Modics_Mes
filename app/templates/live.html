@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}MODICS — Live{% endblock %}
+{% block body_class %}ind{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='live.css') }}">{% endblock %}
+
+{% block header %}
+<!-- Les textes portent data-i18n="clé" : traduits par static/live.js (FR / EN) -->
+<div class="brand">
+  <h1 class="brand-name" data-i18n="nav_live"></h1>
+  <span class="brand-sub" data-i18n="brand_sub"></span>
+  <span class="live off" id="live"><i></i><span id="live-text"></span></span>
+</div>
+<div class="header-right">
+  <button type="button" class="btn" id="tv-all-btn"></button>
+  <button type="button" class="btn" id="tv-btn"></button>
+  <div class="clock mono" id="clock">--:--:--</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Vue d'ensemble : une carte par machine (cliquable = détail ci-dessous). Remplie par static/live.js -->
+<section class="fleet" id="fleet" data-machines='{{ machines|tojson }}' aria-label="Machines"></section>
+
+<!-- État + alertes -->
+<section class="row-state">
+  <div class="state-tile idle" id="state">
+    <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="52" class="ring-bg"/>
+      <circle cx="60" cy="60" r="52" class="ring-fg" id="ring"/>
+    </svg>
+    <div class="state-body">
+      <div class="state-machine" id="s-machine">—</div>
+      <div class="state-label" id="s-state">—</div>
+      <div class="state-since mono" id="s-since"></div>
+      <div class="state-sub" id="s-last"></div>
+    </div>
+  </div>
+  <div class="card alerts-card">
+    <div class="card-head"><h2 data-i18n="alerts"></h2><span class="badge" id="a-count">0</span></div>
+    <ul class="alerts" id="alerts"></ul>
+  </div>
+</section>
+
+<!-- Jauges + OF -->
+<section class="row-gauges">
+  <div class="card gauge-card"><div class="gauge" id="g-trs"></div><div class="g-label" data-i18n="g_trs"></div><div class="g-sub" data-i18n="g_trs_sub"></div></div>
+  <div class="card gauge-card"><div class="gauge" id="g-perf"></div><div class="g-label" data-i18n="g_perf"></div><div class="g-sub" id="g-perf-sub">—</div></div>
+  <div class="card gauge-card"><div class="gauge" id="g-qual"></div><div class="g-label" data-i18n="g_qual"></div><div class="g-sub" id="g-qual-sub">—</div></div>
+  <div class="card of-card">
+    <div class="card-head"><h2 data-i18n="of_title"></h2><span class="muted mono" id="s-time"></span></div>
+    <dl class="of-grid">
+      <dt data-i18n="so"></dt><dd class="mono" id="s-so">—</dd>
+      <dt data-i18n="part"></dt><dd class="mono" id="s-part">—</dd>
+      <dt data-i18n="tool"></dt><dd class="mono" id="s-tool">—</dd>
+      <dt data-i18n="cycle_target"></dt><dd class="mono" id="s-cycle">—</dd>
+    </dl>
+    <div class="progress"><div class="progress-bar" id="s-bar"></div></div>
+    <div class="progress-txt"><span class="mono" id="s-prog">—</span><span id="s-eta"></span></div>
+    <div class="counters">
+      <div><b class="mono" id="k-good">—</b><span data-i18n="good"></span></div>
+      <div><b class="mono bad" id="k-rej">—</b><span data-i18n="rejects"></span></div>
+      <div><b class="mono" id="k-rest">—</b><span data-i18n="remaining"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- OEE : jour / 24 h / semaine -->
+<section class="row-oee">
+  <div class="card gauge-card"><div class="gauge" id="o-today"></div><div class="g-label" data-i18n="oee_today"></div><div class="g-sub" id="o-today-sub">—</div></div>
+  <div class="card gauge-card"><div class="gauge" id="o-24h"></div><div class="g-label" data-i18n="oee_24h"></div><div class="g-sub" id="o-24h-sub">—</div></div>
+  <div class="card gauge-card"><div class="gauge" id="o-wtd"></div><div class="g-label" data-i18n="oee_wtd"></div><div class="g-sub" id="o-wtd-sub">—</div></div>
+</section>
+
+<!-- Chronologie -->
+<section class="card">
+  <div class="card-head">
+    <h2><span data-i18n="timeline_title"></span> <span class="muted" id="t-window"></span></h2>
+    <div class="legend">
+      <span><i class="lg run"></i><span data-i18n="st_run"></span></span>
+      <span><i class="lg stop"></i><span data-i18n="st_stop"></span></span>
+      <span><i class="lg idle"></i><span data-i18n="st_idle"></span></span>
+      <span><i class="lg offplan"></i><span data-i18n="st_offplan"></span></span>
+      <span><i class="lg offline"></i><span data-i18n="st_offline_lg"></span></span>
+    </div>
+  </div>
+  <div class="timeline-shifts" id="shifts"></div>
+  <div class="timeline" id="timeline"></div>
+  <div class="timeline-axis mono" id="axis"></div>
+  <div class="stats">
+    <div><b class="mono" id="m-av">—</b><span data-i18n="m_av"></span></div>
+    <div><b class="mono" id="m-stops">—</b><span data-i18n="m_stops"></span></div>
+    <div><b class="mono" id="m-mttr">—</b><span data-i18n="m_mttr"></span></div>
+    <div><b class="mono" id="m-mtbf">—</b><span data-i18n="m_mtbf"></span></div>
+    <div><b class="mono" id="m-cycle">—</b><span data-i18n="m_cycle"></span></div>
+  </div>
+  <p class="note tv-hide" id="m-note"></p>
+</section>
+
+<!-- tv-hide : masqué en mode TV (écran d'atelier, pas de défilement) -->
+<div class="two tv-hide">
+  <section class="card">
+    <div class="card-head"><h2 id="c-title"></h2><span class="muted" id="b-target"></span></div>
+    <div class="chart short"><canvas id="c-cadence"></canvas></div>
+  </section>
+  <section class="card">
+    <div class="card-head"><h2 data-i18n="queue_title"></h2><span class="muted" id="q-count"></span></div>
+    <div class="table-wrap">
+      <table id="t-queue">
+        <thead><tr><th data-i18n="q_seq"></th><th data-i18n="so"></th><th data-i18n="part"></th><th class="num" data-i18n="q_qty"></th>
+          <th class="num" data-i18n="q_cycle"></th><th class="num" data-i18n="q_cav"></th><th data-i18n="q_due"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<section class="card tv-hide">
+  <div class="card-head"><h2 data-i18n="stops_title"></h2><span class="muted" data-i18n="stops_src"></span></div>
+  <div class="table-wrap">
+    <table id="t-stops">
+      <thead><tr><th data-i18n="s_start"></th><th data-i18n="s_end"></th><th class="num" data-i18n="s_dur"></th>
+        <th data-i18n="s_code"></th><th data-i18n="s_shift"></th><th data-i18n="s_setter"></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<div class="tv-toast" id="tv-toast" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='live.js') }}"></script>
+{% endblock %}

@@ -4,6 +4,7 @@
 ; Ce fichier ne doit JAMAIS être versionné dans un dépôt Git public.
 
 [machine]
+; nom exact de la presse, identique à celui de la base MODICS et de app/machines.json
 name = PRS 63
 
 [local_db]
@@ -16,20 +17,48 @@ user = internal_user
 password = CHANGE_ME
 
 [external_db]
-server = 192.168.80.216
-user = sa
+server = <adresse-du-serveur-sql>
+user = <utilisateur-sql>
 password = CHANGE_ME
 database = MODICS
 
 [email]
-sender = modics2023@gmail.com
+sender = <adresse-expediteur>
 app_password = CHANGE_ME
-receivers_default = mohamed.aliayari@bulgin.com,marwen.rahal@bulgin.com,marwenrahal80@gmail.com
+receivers_default = <destinataire1@exemple.com>,<destinataire2@exemple.com>
 
 [capteur]
-; front qui compte un cycle : falling = fin d'impulsion ON (conforme au schéma), ou rising
-edge = falling
-; fréquence de lecture de l'entrée 2 (Hz)
+; front qui compte un cycle : rising = début d'impulsion ON, falling = fin d'impulsion ON
+edge = rising
+; fréquence de lecture des entrées (Hz)
 poll_hz = 50
 ; anti-rebond : nombre de lectures identiques consécutives pour valider un changement (3 x 20 ms = 60 ms)
 stable_samples = 3
+; numéros d'entrées de l'Automation HAT (0 = désactivé)
+cycle_input = 2
+stop_input = 1
+reject_input = 3
+; détection d'arrêt sans signal : aucune impulsion pendant cycle_t x facteur -> Arrêt non déclaré
+stop_timeout_factor = 2.0
+stop_timeout_min = 30
+stop_timeout_max = 300
+; plage de temps de cycle acceptée à la saisie (secondes)
+ct_min_s = 1
+ct_max_s = 70
+; écart max accepté entre le CT saisi et le CT réel mesuré (s), et cycles consécutifs avant alerte
+ct_tolerance_s = 10
+ct_confirm_cycles = 3
+
+[api]
+; API HTTP locale : l'ERP (IFS) et le serveur MODICS interrogent / alimentent la presse.
+; L'API reste INACTIVE tant que api_key vaut CHANGE_ME.
+; Générer une clé par presse, par exemple : python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+enabled = true
+host = 0.0.0.0
+port = 8080
+api_key = CHANGE_ME
+
+; Optionnel : fichier Excel des Part Number autorisés sur la presse (outil et empreintes imposés)
+; [machine_group]
+; xlsx = /home/pi/Downloads/Machine_Group_M63.xlsx
+; sheet = Machine Group M63
